@@ -1,0 +1,7 @@
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\Memory.exe.config
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\Memory.exe
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\Memory.pdb
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\NeuralStructure.csproj.AssemblyReference.cache
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\NeuralStructure.csproj.CoreCompileInputs.cache
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\Memory.exe
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\Memory.pdb
