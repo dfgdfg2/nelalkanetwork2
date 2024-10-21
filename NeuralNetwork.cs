@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.IO;
+using Newtonsoft.Json;
+
 
 namespace ConsoleApp1
 {
@@ -10,6 +15,11 @@ namespace ConsoleApp1
     {
         public List<Layer> neuronLayer { get; private set; }
         public Topology Topology { get; private set; }
+        public JsonSerializerOptions JsonSerializerOptions { get; set; } = new JsonSerializerOptions
+        {
+                IncludeFields = true,
+                PropertyNameCaseInsensitive = true
+        };
         public NeuralNetwork(Topology topology)
         {
             this.Topology = topology;
@@ -17,12 +27,51 @@ namespace ConsoleApp1
 
             InitializeNeurons();
         }
+        public double GetSumWeights()
+        {
+            double sumWeights = 0;
+            for (int i = 0; i < neuronLayer.Count; i++)
+            {
+                sumWeights += neuronLayer[i].SumWeights();
+            }
+            return sumWeights;
+        }
+
+        public void WithdrawDates(string path)
+        {
+            List<Layer> dates = null;
+            using (StreamReader sr = new StreamReader(path))
+            {
+                string json = sr.ReadToEnd();
+                dates = JsonConvert.DeserializeObject<List<Layer>>(json);
+            }
+            for (int i = 0; i < dates.Count; i++)
+            {
+                Layer layer = dates[i];
+                for (int j = 0; j < layer.Count; j++)
+                {
+                    Neuron neuron = layer[j];
+                    for (int k = 0; k < neuron.WeightsCount; k++)
+                    {
+                        Console.Write(neuron.Weights[k] + "\u00A0\u00A0");
+                    }
+                }
+                Console.WriteLine();
+            }
+        }
+        public void GetDatesTo(string path)
+        {
+            using(FileStream fs = new FileStream(path, FileMode.OpenOrCreate))
+            {
+                System.Text.Json.JsonSerializer.Serialize(fs, neuronLayer);
+            }
+        }
 
         public double Learn(List<double> inputs, int[] expected, int epoch, AbGradientDescent descent = null, Normalization normalization = Normalization.None)
         {
             if (descent == null)
             {
-                descent = new GradientDescent(this);
+                descent = new GradientDescent(this, new DefaultReg());
             }
 
             return descent.Backpropagation(inputs, expected, epoch);
@@ -32,7 +81,7 @@ namespace ConsoleApp1
         {
             if (descent == null)
             {
-                descent = new GradientDescent(this);
+                descent = new GradientDescent(this, new DefaultReg());
             }
             if (normalization == Normalization.NormalizationZ)
             {

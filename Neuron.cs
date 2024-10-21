@@ -3,30 +3,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ConsoleApp1
 {
     public class Neuron
     {
         public List<double> Weights { get; private set; }
+        public double Delta { get; set; }
 
         public NeuronType neuronType { get; private set; }
         public double Output { get; set; }
-        public double Delta { get; set; }
         public int WeightsCount { get; private set; }
         public int NumberOfLayer{ get; private set; }
         public int NumberLayer { get; private set; }
-
-        public Neuron(NeuronType neuronType, int weightsCount, int numberLayer, int numberOfLayer, Random random = null)
+        public Random rnd { get; private set; }
+        [JsonConstructor]
+        public Neuron(NeuronType neuronType, int weightsCount, int numberLayer, int numberOfLayer, Random rnd = null)
         {
+            if (rnd != null)
+            {
+                this.rnd = rnd;
+            }
             this.neuronType = neuronType;
             Weights = new List<double>();
             NumberOfLayer = numberOfLayer;
             NumberLayer = numberLayer;
-            InitializeWeights(weightsCount, random);
+            InitializeWeights(weightsCount, this.rnd);
         }
 
-        private void InitializeWeights(int weightsCount, Random random)
+        private void InitializeWeights(int weightsCount, Random random = null)
         {
             if (neuronType == NeuronType.Input)
             {

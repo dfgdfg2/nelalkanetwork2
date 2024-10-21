@@ -32,7 +32,7 @@ namespace ConsoleApp1
             };
             Topology top = new Topology(4, 1, 0.1, new List<int> { 2 });
             NeuralNetwork nn = new NeuralNetwork(top);
-            double result = nn.Learn(inputs, outputs, 1000, new GradientDescent(nn, new Momentum(top)));
+            double result = nn.Learn(inputs, outputs, 10000, new GradientDescent(nn, null, new RMSProp(top)));
 
             Console.WriteLine($"avg: {result}");
             int length = inputs.GetLength(0);
@@ -43,6 +43,7 @@ namespace ConsoleApp1
                 result = nn.FeedForward(inputs[i]);
                 Console.WriteLine($"expected: {expected} result: {result}");
             }
+            
 
             Console.ReadLine();
         }
