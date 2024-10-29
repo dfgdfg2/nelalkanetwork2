@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,7 +18,6 @@ namespace ConsoleApp1
         protected List<Regularizations> regularizations;
         protected int CurrentEpoch;
         protected DelegateforWeights regulatorW;
-        public abstract double Backpropagation<T>(T dataset, int[] expected, int epoch);
         public AbGradientDescent(NeuralNetwork nn, IOptimizer optimizer = null)
         {
             currentNN = nn;
@@ -55,11 +56,11 @@ namespace ConsoleApp1
                             regularization = new RegDropoutLearn();
                             currentNN.Reg = new RegDropoutTest();
                             break;
-                        /*case Regularizations.BatchNormalization:
-                            regularization = new BatchNormalizationLearn();
-                            currentNN.Reg
-                            break;
-                        */
+                            /*case Regularizations.BatchNormalization:
+                                regularization = new BatchNormalizationLearn();
+                                currentNN.Reg
+                                break;
+                            */
                     }
                 }
                 if (IsComb == 2)
@@ -68,65 +69,18 @@ namespace ConsoleApp1
                 }
             }
         }
-    }
-
-    public class MiniBatchGD : AbGradientDescent
-    {
-        Random random;
-        double LearningRate;
-        int Capacity;
-        public MiniBatchGD(NeuralNetwork nn, int capacity = 2, IOptimizer optimizer = null) : base(nn, optimizer) 
+        public abstract double Backpropagation<T>(T dataset, int[] expected, int epoch);
+        public void Backpropagation(double learningRate, double error)
         {
-            Capacity = capacity; 
-            random = new Random();
-        }
-
-        public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
-        {
-            if (dataset is List<double> outputsL)
-            {
-                double error = 0;
-                for (int i = 0; i < epoch; i++)
-                {
-                    CurrentEpoch++;
-                    error += Backpropagation(outputsL, expected[0]);
-                }
-                return error;
-            }
-            else if (dataset is double[][] outputsM)
-            {
-                double error = 0;
-                for (int i = 0; i < epoch; i++)
-                {
-                    CurrentEpoch++;
-                    for (int j = 0; j < Capacity; j++)
-                    {
-                        int rnd = random.Next(0, expected.Length - 1);
-                        int ex = expected[rnd];
-                        error += Backpropagation(outputsM[rnd], ex);
-                    }
-                }
-                return error * Capacity / epoch;
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        public double Backpropagation(List<double> dataset, int expected)
-        {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
             int count = neuronLayer.Count;
             Layer currentLayer = neuronLayer[count - 1];
             Layer previousLayer = neuronLayer[count - 2];
             List<double> outputs = previousLayer.GetSignals();
-            LearningRate = topology.LearningRate / Math.Pow(CurrentEpoch, 0.3);
 
             for (int j = 0; j < currentLayer.Count; j++)
             {
                 Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, LearningRate, CurrentEpoch, regulatorW);
+                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, learningRate, CurrentEpoch, regulatorW);
             }
 
             for (int i = neuronLayer.Count - 2; i >= 1; i--)
@@ -140,149 +94,13 @@ namespace ConsoleApp1
                 {
                     Neuron currentNeuron = currentLayer[j];
                     double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, LearningRate, CurrentEpoch, regulatorW);
+                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, learningRate, CurrentEpoch, regulatorW);
                 }
-            }
-            return error * error;
-        }
-
-        public double Backpropagation(double[] dataset, int expected)
-        {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            List<double> outputs = previousLayer.GetSignals();
-            for (int j = 0; j < currentLayer.Count; j++)
-            {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, topology.LearningRate, CurrentEpoch, regulatorW);
-            }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, topology.LearningRate, CurrentEpoch, regulatorW);
-                }
-            }
-            return error * error;
-        }
-    }
-
-    public class StochasticGradient : AbGradientDescent
-    {
-        Random random;
-        double LearningRate;
-        public StochasticGradient(NeuralNetwork nn, IOptimizer optimizer = null) : base(nn, optimizer)
-        {
-            random = new Random();
-        }
-
-        public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
-        {
-            if (dataset is List<double> outputsL)
-            {
-                double error = 0;
-                for (int i = 0; i < epoch; i++)
-                {
-                    CurrentEpoch++;
- 
-                    error += Backpropagation(outputsL, expected[0]);
-                }
-                return error * error;
-            }
-            else if (dataset is double[][] outputsM)
-            {
-                double error = 0;
-                for (int i = 0; i < epoch; i++)
-                {
-                    CurrentEpoch++;
-                    int rnd = random.Next(0, expected.Length - 1);
-                    int ex = expected[rnd];
-                    error += Backpropagation(outputsM[rnd], ex);
-                }
-                return error * outputsM.Length / epoch;
-            }
-            else
-            {
-                return 0;
             }
         }
-
-        public double Backpropagation(List<double> dataset, int expected)
+        protected double GetErrors(double[] outputs, int expected)
         {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            List<double> outputs = previousLayer.GetSignals();
-            outputs = previousLayer.GetSignals();
-
-            LearningRate = topology.LearningRate / Math.Pow(CurrentEpoch, 0.1);
-
-            for (int j = 0; j < currentLayer.Count; j++)
-            {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, LearningRate, CurrentEpoch, regulatorW);
-            }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, LearningRate, CurrentEpoch, regulatorW);
-                }
-            }
-            return error * error;
-        }
-
-        public double Backpropagation(double[] dataset, int expected)
-        {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            List<double> outputs = previousLayer.GetSignals();
-            outputs = previousLayer.GetSignals();
-
-            LearningRate = topology.LearningRate / Math.Pow(CurrentEpoch, 0.1);
-
-            for (int j = 0; j < currentLayer.Count; j++)
-            {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, LearningRate, CurrentEpoch, regulatorW);
-            }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, LearningRate, CurrentEpoch, regulatorW);
-                }
-            }
-            return error * error;
+            return regularization.FeedForward(outputs, currentNN.neuronLayer) - expected;
         }
     }
 
@@ -294,93 +112,126 @@ namespace ConsoleApp1
 
         public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
         {
-            if (dataset is List<double> outputsL)
+            if (dataset is double[] outputsL)
             {
-                double error = 0;
+                double MSE = 0;
                 for (int i = 0; i < epoch; i++)
                 {
+                    double error = 0;
+                    double MSEtemp = 0;
                     CurrentEpoch++;
-                    error += Backpropagation(outputsL, expected[0]);
+                    error += GetErrors(outputsL, expected[i]);
+                    MSEtemp += error * error;
+                    MSEtemp = MSEtemp / outputsL.Length;
+                    MSE += MSEtemp;
+                    error = error / outputsL.Length;
+                    Backpropagation(topology.LearningRate, error);
                 }
-                return error;
+                return MSE / epoch;
             }
             else if (dataset is double[][] outputsM)
             {
-                double error = 0;
+                double MSE = 0;
                 for (int j = 0; j < epoch; j++)
                 {
+                    double error = 0;
+                    double MSEtemp = 0;
                     CurrentEpoch++;
-                    for (int i = 0; i < outputsM.Length; i++)
+                    for (int i = 0; i < expected.Length; i++)
                     {
-                        error += Backpropagation(outputsM[i], expected[i]);
+                        error = GetErrors(outputsM[i], expected[i]);
+                        MSEtemp += error * error;
                     }
+                    MSEtemp = MSEtemp / expected.Length;
+                    error = error / expected.Length;
+                    MSE += MSEtemp;
+                    Backpropagation(topology.LearningRate, error);
                 }
-                return error / epoch;
+                return MSE / epoch;
             }
             else
             {
                 return 0;
             }
         }
+    }
 
-        public double Backpropagation(List<double> dataset, int expected)
+    public class MiniBatchGD : AbGradientDescent
+    {
+        Random random;
+        int Capacity;
+        public MiniBatchGD(NeuralNetwork nn, int capacity = 2, IOptimizer optimizer = null) : base(nn, optimizer) 
         {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            List<double> outputs = previousLayer.GetSignals();
-            for (int j = 0; j < currentLayer.Count; j++)
+            if (capacity < 1)
             {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, topology.LearningRate, CurrentEpoch, regulatorW);
+                return;
             }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, topology.LearningRate, CurrentEpoch, regulatorW);
-                }
-            }
-            return error * error;
+            Capacity = capacity; 
+            random = new Random();
         }
 
-        public double Backpropagation(double[] dataset, int expected)
+        public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
         {
-            double error = regularization.FeedForward(dataset, currentNN.neuronLayer) - expected;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            List<double> outputs = previousLayer.GetSignals();
-            for (int j = 0; j < currentLayer.Count; j++)
+            if (dataset is double[][] outputsM)
             {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, topology.LearningRate, CurrentEpoch, regulatorW);
-            }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
+                double MSE = 0;
+                for (int j = 0; j < epoch; j++)
                 {
-                    Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, topology.LearningRate, CurrentEpoch, regulatorW);
+                    double error = 0;
+                    double MSEtemp = 0;
+                    CurrentEpoch++;
+                    double learningRate = 0.1 / Math.Pow(CurrentEpoch, 0.3);
+                    for (int i = 0; i < Capacity; i++)
+                    {
+                        int rnd = random.Next(0, expected.Length - 1);
+                        error += GetErrors(outputsM[rnd], expected[rnd]);
+                        MSEtemp += error * error;
+                    }
+                    MSEtemp = MSEtemp / outputsM.Length;
+                    MSE += MSEtemp;
+                    error = error / outputsM.Length;
+                    Backpropagation(learningRate, error);
                 }
+                return MSE / epoch;
             }
-            return error * error;
+            else
+            {
+                return 0;
+            }
+        }
+    }
+
+    public class StochasticGradient : AbGradientDescent
+    {
+        Random random;
+        public StochasticGradient(NeuralNetwork nn, IOptimizer optimizer = null) : base(nn, optimizer)
+        {
+            random = new Random();
+        }
+
+        public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
+        {
+            if (dataset is double[][] outputsM)
+            {
+                double MSE = 0;
+                for (int i = 0; i < epoch; i++)
+                {
+                    CurrentEpoch++;
+                    double learningRate = 0.1 / Math.Pow(CurrentEpoch, 0.3);
+                    int rnd = random.Next(0, expected.Length - 1);
+                    double error = GetErrors(outputsM[rnd], expected[rnd]);
+                    double MSEtemp = error * error;
+                    MSEtemp = MSEtemp / outputsM.Length;
+                    MSE += MSEtemp;
+                    error = error / outputsM.Length;
+                    Backpropagation(learningRate, error);
+                }
+                return MSE / epoch;
+            }
+            else
+            {
+                return 0;
+            }
         }
     }
 }

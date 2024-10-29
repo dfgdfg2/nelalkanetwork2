@@ -42,10 +42,10 @@ namespace ConsoleApp1
                 new double[] { 1, 1, 1, 0 },
                 new double[] { 1, 1, 1, 1 }
             };
-            Topology top = new Topology(4, 1, 0.1, new List<int> { 2 }, 10000);
+            Topology top = new Topology(4, 1, 0.1, new List<int> { 2 }, 1000);
             NeuralNetwork nn = new NeuralNetwork(top);
             List<Regularizations> regs = new List<Regularizations> { Regularizations.Dropout };
-            double result = nn.Learn(inputs, outputs, top.Epoch, new GradientDescent(nn, new Adam(top, regs)));
+            double result = nn.Learn(inputs, outputs, top.Epoch, new GradientDescent(nn, new NesterovMomentum(top)));
 
             Console.WriteLine($"avg: {result}");
 

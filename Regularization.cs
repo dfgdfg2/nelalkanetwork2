@@ -504,7 +504,7 @@ namespace ConsoleApp1
     {
         Random random = new Random();
         static double LambdaL1 = Math.Pow(10, -6);
-        static double LambdaL2 = Math.Pow(10, -);
+        static double LambdaL2 = Math.Pow(10, -4);
         public double L1(double weight)
         {
             return LambdaL1 * Math.Abs(weight);
