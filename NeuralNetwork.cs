@@ -15,6 +15,7 @@ namespace ConsoleApp1
     {
         public List<Layer> neuronLayer { get; private set; }
         public Topology Topology { get; private set; }
+        public ITestRegularization Reg { get; set; }
         public JsonSerializerOptions JsonSerializerOptions { get; set; } = new JsonSerializerOptions
         {
                 IncludeFields = true,
@@ -71,9 +72,8 @@ namespace ConsoleApp1
         {
             if (descent == null)
             {
-                descent = new GradientDescent(this, new DefaultReg());
+                descent = new GradientDescent(this);
             }
-
             return descent.Backpropagation(inputs, expected, epoch);
         }
 
@@ -81,7 +81,7 @@ namespace ConsoleApp1
         {
             if (descent == null)
             {
-                descent = new GradientDescent(this, new DefaultReg());
+                descent = new GradientDescent(this);
             }
             if (normalization == Normalization.NormalizationZ)
             {
@@ -91,89 +91,18 @@ namespace ConsoleApp1
             {
                 MinMax(dataset);
             }
-
             double error = descent.Backpropagation(dataset, expected, epoch);
             
             return error;
         }
-
         public double FeedForward(List<double> inputs)
         {
-            DefaultOptimizer toolNeuron = new DefaultOptimizer();
-            Neuron currentNeuron = null;
-            List<double> currentOutputs = FeedForwardInputs(toolNeuron, currentNeuron, inputs);
-
-            for (int i = 1; i < neuronLayer.Count; i++)
-            {
-                double[] outputs = new double[neuronLayer[i].Count];
-                for (int j = 0; j < neuronLayer[i].Count; j++)
-                {
-                    currentNeuron = neuronLayer[i][j];
-                    double output = toolNeuron.FeedForward(currentOutputs, currentNeuron);
-                    outputs[j] = output;
-                }
-                currentOutputs = new List<double>(outputs);
-            }
-
-            return currentNeuron.Output;
+            return Reg.FeedForward(inputs, neuronLayer);
         }
 
         public double FeedForward(double[] inputs)
         {
-            DefaultOptimizer toolNeuron = new DefaultOptimizer();
-            Neuron currentNeuron = null;
-            List<double> currentOutputs = FeedForwardInputs(toolNeuron, currentNeuron, inputs);
-
-            for (int i = 1; i < neuronLayer.Count; i++)
-            {
-                double[] outputs = new double[neuronLayer[i].Count];
-                Layer currentLayer = neuronLayer[i];
-                for (int j = 0; j < neuronLayer[i].Count; j++)
-                {
-                    currentNeuron = currentLayer[j];
-                    double output = toolNeuron.FeedForward(currentOutputs, currentNeuron);
-                    outputs[j] = output;
-                }
-                currentOutputs = new List<double>(outputs);
-            }
-
-            return currentNeuron.Output;
-        }
-
-        public List<double> FeedForward(List<List<double>> inputs)
-        {
-            List<double> outputs = new List<double>();
-            for (int i = 0; i < inputs.Count; i++)
-            {
-                outputs.Add(FeedForward(inputs[i]));
-            }
-            return outputs;
-        }
-
-        private List<double> FeedForwardInputs(DefaultOptimizer toolNeuron, Neuron currentNeuron, List<double> inputs)
-        {
-            List<double> outputs = new List<double>();
-            for (int j = 0; j < neuronLayer[0].Count; j++)
-            {
-                currentNeuron = neuronLayer[0][j];
-                List<double> inputs2 = new List<double> { inputs[j] };
-                double output = toolNeuron.FeedForward(inputs2, currentNeuron);
-                outputs.Add(output);
-            }
-            return outputs;
-        }
-
-        private List<double> FeedForwardInputs(DefaultOptimizer toolNeuron, Neuron currentNeuron, double[] inputs)
-        {
-            List<double> outputs = new List<double>();
-            for (int j = 0; j < neuronLayer[0].Count; j++)
-            {
-                currentNeuron = neuronLayer[0][j];
-                List<double> inputs2 = new List<double> { inputs[j] };
-                double output = toolNeuron.FeedForward(inputs2, currentNeuron);
-                outputs.Add(output);
-            }
-            return outputs;
+            return Reg.FeedForward(inputs, neuronLayer);
         }
 
         private void NormalizationZ(double[][] inputs)
@@ -273,85 +202,5 @@ namespace ConsoleApp1
             }
             neuronLayer.Add(new Layer(currentLayer));
         }
-        /*public double Backpropagation(double[] inputs, double expected)
-        {
-            EducationNeuron educate = new EducationNeuron();
-            double error = FeedForward(inputs) - expected;
-            List<double> outputs = null;
-            int count = neuronLayer.Count;
-            Layer currentLayer = neuronLayer[count - 1];
-            Layer previousLayer = neuronLayer[count - 2];
-            outputs = previousLayer.GetSignals();
-            for (int j = 0; j < currentLayer.Count; j++)
-            {
-                Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = educate.BackPropagation(currentNeuron, outputs, error, Topology.LearningRate);
-            }
-
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    double deltaSum = 0;
-                    Neuron currentNeuron = currentLayer[j];
-                    double currentOutput = currentLayer[j].Output;
-                    for (int k = 0; k < forwardLayer.Count; k++)
-                    {
-                        double delta = forwardLayer.Neurons[k].Delta;
-                        double weights = forwardLayer.Neurons[k].Weights[j];
-                        deltaSum += delta * weights;
-                    }
-                    deltaSum *= currentOutput;
-                    currentNeuron.Delta = educate.BackPropagation(currentNeuron, outputs, deltaSum, Topology.LearningRate);
-                }
-            }
-            return error;
-        }
-        public double Backpropagation(List<double> inputs, double expected)
-        {
-            EducationNeuron educate = new EducationNeuron();
-            double error = FeedForward(inputs);
-            List<double> outputs = null;
-            for (int i = neuronLayer.Count - 1; i > neuronLayer.Count - 2; i--)
-            {
-                Layer currentLayer = neuronLayer[i];
-                Layer previousLayer = neuronLayer[i - 1];
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    Neuron currentNeuron = currentLayer[j];
-                    currentNeuron.Delta = educate.BackPropagation(currentNeuron, outputs, error, Topology.LearningRate);
-                }
-            }
-            double deltaSum = error;
-            for (int i = neuronLayer.Count - 2; i >= 1; i--)
-            {
-                Layer currentLayer = neuronLayer[i];
-                Layer forwardLayer = neuronLayer[i + 1];
-                Layer previousLayer = neuronLayer[i - 1];
-
-                outputs = previousLayer.GetSignals();
-                for (int j = 0; j < currentLayer.Count; j++)
-                {
-                    for (int k = 0; k < forwardLayer.Count; k++)
-                    {
-                        double delta = forwardLayer.Neurons[k].Delta;
-                        double output = forwardLayer.Neurons[k].Output;
-                        double weights = forwardLayer.Neurons[k].Weights[j];
-                        deltaSum += delta * output * weights;
-                    }
-                    Neuron currentNeuron = currentLayer[j];
-                    currentNeuron.Delta = educate.BackPropagation(currentNeuron, outputs, error, Topology.LearningRate);
-                }
-            }
-            return error;
-        }
-*/
-
     }
 }

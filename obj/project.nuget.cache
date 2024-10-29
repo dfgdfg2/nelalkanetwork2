@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "ooU6YyEybyqmH0SxuTRoU2Iqz7+1zouyB5DZB5BdbRNEOKaK32DtfM6tM4iWRpJQaEKRTW/LaQXBi2KFEqFXdg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\zdmit\\source\\repos\\MyNeralNetwork\\Memory\\NeuralStructure.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\zdmit\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\zdmit\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
+    "C:\\Users\\zdmit\\.nuget\\packages\\system.data.datasetextensions\\4.5.0\\system.data.datasetextensions.4.5.0.nupkg.sha512"
+  ],
+  "logs": []
+}

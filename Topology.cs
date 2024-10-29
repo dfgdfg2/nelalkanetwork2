@@ -14,8 +14,10 @@ namespace ConsoleApp1
         public int Count { get { return HiddenCounts.Count + 2; } }
         public double LearningRate { get; private set; }
         public List<int> CollectionCounts { get; private set; }
-        public Topology(int inputs, int outputs, double learningRate, List<int> hiddens)
+        public int Epoch { get; private set; }
+        public Topology(int inputs, int outputs, double learningRate, List<int> hiddens, int epoch)
         {
+            Epoch = epoch;
             InputCount = inputs;
             OutputCount = outputs;
             LearningRate = learningRate;
