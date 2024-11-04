@@ -133,7 +133,7 @@ namespace ConsoleApp1
 
     public class DefaultRegularization : ITestRegularization, ILearnRegularization
     {
-        DefaultOptimizer opti = new DefaultOptimizer();
+        IMetric opti = new MSE();
 
         public double FeedForward(List<double> inputs, Neuron neuron)
         {
@@ -243,7 +243,7 @@ namespace ConsoleApp1
 
     public class RegDropoutTest : ConnectedChance, ITestRegularization
     {
-        DefaultOptimizer opti = new DefaultOptimizer();
+        IMetric opti = new MSE();
         public double FeedForwardTest(List<double> inputs, Neuron neuron)
         {
             double output = 0;
@@ -373,7 +373,7 @@ namespace ConsoleApp1
             }
             return false;
         }
-        DefaultOptimizer opti = new DefaultOptimizer();
+        IMetric opti = new MSE();
         Random random = new Random();
         public double FeedForwardLearn(List<double> inputs, Neuron neuron)
         {

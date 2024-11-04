@@ -45,9 +45,9 @@ namespace ConsoleApp1
             Topology top = new Topology(4, 1, 0.1, new List<int> { 2 }, 1000);
             NeuralNetwork nn = new NeuralNetwork(top);
             List<Regularizations> regs = new List<Regularizations> { Regularizations.Dropout };
-            double result = nn.Learn(inputs, outputs, top.Epoch, new GradientDescent(nn, new NesterovMomentum(top)));
+            double result = nn.Learn(inputs, outputs, top.Epoch, new StochasticGradient(nn));
 
-            Console.WriteLine($"avg: {result}");
+            Console.WriteLine($"avg: {Math.Round(result, 2)}%");
 
             ShowStatisticOfNN(inputs, outputs, nn);
 

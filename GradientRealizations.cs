@@ -18,6 +18,7 @@ namespace ConsoleApp1
         protected List<Regularizations> regularizations;
         protected int CurrentEpoch;
         protected DelegateforWeights regulatorW;
+        protected IMetric metric = new MAE();
         public AbGradientDescent(NeuralNetwork nn, IOptimizer optimizer = null)
         {
             currentNN = nn;
@@ -70,7 +71,7 @@ namespace ConsoleApp1
             }
         }
         public abstract double Backpropagation<T>(T dataset, int[] expected, int epoch);
-        public void Backpropagation(double learningRate, double error)
+        public virtual void Backpropagation(double learningRate)
         {
             int count = neuronLayer.Count;
             Layer currentLayer = neuronLayer[count - 1];
@@ -80,7 +81,7 @@ namespace ConsoleApp1
             for (int j = 0; j < currentLayer.Count; j++)
             {
                 Neuron currentNeuron = currentLayer[j];
-                currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, error, learningRate, CurrentEpoch, regulatorW);
+                Optimizer.BackPropagation(currentNeuron, outputs, learningRate, CurrentEpoch, regulatorW);
             }
 
             for (int i = neuronLayer.Count - 2; i >= 1; i--)
@@ -93,14 +94,30 @@ namespace ConsoleApp1
                 for (int j = 0; j < currentLayer.Count; j++)
                 {
                     Neuron currentNeuron = currentLayer[j];
-                    double deltaSum = Optimizer.GetFromAllDelta(forwardLayer, j);
-                    currentNeuron.Delta = Optimizer.BackPropagation(currentNeuron, outputs, deltaSum, learningRate, CurrentEpoch, regulatorW);
+                    Optimizer.BackPropagation(currentNeuron, outputs, learningRate, CurrentEpoch, regulatorW);
                 }
             }
         }
-        protected double GetErrors(double[] outputs, int expected)
+
+        public virtual List<double> Deltapropagation(double error)
         {
-            return regularization.FeedForward(outputs, currentNN.neuronLayer) - expected;
+            List<double> delta = new List<double>();
+            Layer currentLayer = neuronLayer.Last();
+            delta.AddRange(metric.SetFirstDelta(error, currentLayer));
+
+            for (int i = neuronLayer.Count - 2; i >= 1; i--)
+            {
+                Layer forwardLayer = neuronLayer[i + 1];
+                currentLayer = neuronLayer[i];
+                delta.AddRange(metric.SetDeltas(forwardLayer, currentLayer));
+            }
+            return delta;
+        }
+
+        protected double GetActual(double[] outputs, int expected)
+        {
+            double actual = regularization.FeedForward(outputs, currentNN.neuronLayer);
+            return actual;
         }
     }
 
@@ -112,42 +129,26 @@ namespace ConsoleApp1
 
         public override double Backpropagation<T>(T dataset, int[] expected, int epoch)
         {
-            if (dataset is double[] outputsL)
+            if (dataset is double[][] outputsM)
             {
-                double MSE = 0;
+                double metr = 0;
                 for (int i = 0; i < epoch; i++)
                 {
-                    double error = 0;
-                    double MSEtemp = 0;
+                    UniqueRandom uniqueRandom = new UniqueRandom(0, expected.Length - 1);
                     CurrentEpoch++;
-                    error += GetErrors(outputsL, expected[i]);
-                    MSEtemp += error * error;
-                    MSEtemp = MSEtemp / outputsL.Length;
-                    MSE += MSEtemp;
-                    error = error / outputsL.Length;
-                    Backpropagation(topology.LearningRate, error);
-                }
-                return MSE / epoch;
-            }
-            else if (dataset is double[][] outputsM)
-            {
-                double MSE = 0;
-                for (int j = 0; j < epoch; j++)
-                {
-                    double error = 0;
-                    double MSEtemp = 0;
-                    CurrentEpoch++;
-                    for (int i = 0; i < expected.Length; i++)
+                    List<double> deltas;
+                    for (int j = 0; j < expected.Length; j++)
                     {
-                        error = GetErrors(outputsM[i], expected[i]);
-                        MSEtemp += error * error;
+                        int numb = uniqueRandom.GetUniqueRandomNumber();
+                        int exp = expected[numb];
+                        double actual = GetActual(outputsM[numb], exp);
+                        double error = actual - exp;
+                        metr += metric.GetMetric(actual, exp);
+                        deltas = Deltapropagation(error);
+
                     }
-                    MSEtemp = MSEtemp / expected.Length;
-                    error = error / expected.Length;
-                    MSE += MSEtemp;
-                    Backpropagation(topology.LearningRate, error);
                 }
-                return MSE / epoch;
+                return metr / epoch * 100;
             }
             else
             {
@@ -177,22 +178,15 @@ namespace ConsoleApp1
                 double MSE = 0;
                 for (int j = 0; j < epoch; j++)
                 {
-                    double error = 0;
                     double MSEtemp = 0;
+                    double totalError = 0;
                     CurrentEpoch++;
-                    double learningRate = 0.1 / Math.Pow(CurrentEpoch, 0.3);
-                    for (int i = 0; i < Capacity; i++)
-                    {
-                        int rnd = random.Next(0, expected.Length - 1);
-                        error += GetErrors(outputsM[rnd], expected[rnd]);
-                        MSEtemp += error * error;
-                    }
-                    MSEtemp = MSEtemp / outputsM.Length;
+                    MSEtemp = MSEtemp / Capacity;
                     MSE += MSEtemp;
-                    error = error / outputsM.Length;
-                    Backpropagation(learningRate, error);
+                    totalError = totalError / Capacity;
+                    Backpropagation(currentNN.Topology.LearningRate);
                 }
-                return MSE / epoch;
+                return MSE / epoch * 100;
             }
             else
             {
@@ -213,20 +207,23 @@ namespace ConsoleApp1
         {
             if (dataset is double[][] outputsM)
             {
-                double MSE = 0;
+                double metr = 0;
                 for (int i = 0; i < epoch; i++)
                 {
+                    UniqueRandom uniqueRandom = new UniqueRandom(0, expected.Length - 1);
                     CurrentEpoch++;
-                    double learningRate = 0.1 / Math.Pow(CurrentEpoch, 0.3);
-                    int rnd = random.Next(0, expected.Length - 1);
-                    double error = GetErrors(outputsM[rnd], expected[rnd]);
-                    double MSEtemp = error * error;
-                    MSEtemp = MSEtemp / outputsM.Length;
-                    MSE += MSEtemp;
-                    error = error / outputsM.Length;
-                    Backpropagation(learningRate, error);
+                    for (int j = 0; j < expected.Length; j++)
+                    {
+                        int numb = uniqueRandom.GetUniqueRandomNumber();
+                        int exp = expected[numb];
+                        double actual = GetActual(outputsM[numb], exp);
+                        double error = actual - exp;
+                        metr += metric.GetMetric(actual, exp);
+                        Deltapropagation(error);
+                        Backpropagation(topology.LearningRate);
+                    }
                 }
-                return MSE / epoch;
+                return metr / epoch * 100; 
             }
             else
             {

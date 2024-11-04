@@ -21,11 +21,7 @@ namespace ConsoleApp1
                 throw new ArgumentException("Can be only 1 unical modifier");
             }
         }
-        public abstract double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw);
-        public abstract double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw);
-        public abstract double SigmoidDX(double value);
-        public abstract double Sigmoid(double value);
-        public abstract double GetFromAllDelta(Layer forwardLayer, int j);
+        public abstract void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw);
         
     }
     /// <summary>
@@ -41,54 +37,16 @@ namespace ConsoleApp1
         {
         }
 
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 neuron.Weights[i] = currentWeight - (learningRate * delta * output + regulator);
             }
-            return delta;
-        }
-
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                neuron.Weights[i] = currentWeight - (learningRate * delta * output + regulator);
-            }
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
-        }
-
-        public override double SigmoidDX(double value)
-        {
-            double sigmVal = Sigmoid(value);
-            return sigmVal * (1 - sigmVal);
-        }
-
-        public override double Sigmoid(double value)
-        {
-            return 1 / (1 + Math.Exp(-value));
         }
     }
     /// <summary>
@@ -130,61 +88,21 @@ namespace ConsoleApp1
             Koef = 0.9;
         }
 
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             int numberLayer = neuron.NumberLayer;
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 double inertia = Inertions[numberLayer - 1][neuron.NumberOfLayer][i] * Koef + delta * learningRate * output; // исправить error на delta в случае нестабильности!!!!!!!!!!!
                 Inertions[numberLayer - 1][neuron.NumberOfLayer][i] = inertia;
                 neuron.Weights[i] = currentWeight - (inertia + regulator);
             }
-            return delta;
         }
 
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            int numberLayer = neuron.NumberLayer;
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                double inertia = Inertions[numberLayer - 1][neuron.NumberOfLayer][i] * Koef + delta * learningRate * output; // исправить error на delta в случае нестабильности!!!!!!!!!!!
-                Inertions[numberLayer - 1][neuron.NumberOfLayer][i] = inertia;
-                neuron.Weights[i] = currentWeight - (inertia + regulator);
-            }
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
-        }
-
-        public override double SigmoidDX(double value)
-        {
-            double sigmVal = Sigmoid(value);
-            return sigmVal * (1 - sigmVal);
-        }
-
-        public override double Sigmoid(double value)
-        {
-            return 1 / (1 + Math.Exp(-value));
-        }
     }
     //NOT DEFINED
     public class NesterovMomentum : Momentum
@@ -198,14 +116,13 @@ namespace ConsoleApp1
 
         }
 
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             int numberLayer = neuron.NumberLayer;
-
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 double inertia = Inertions[numberLayer - 1][neuron.NumberOfLayer][i];
@@ -215,41 +132,6 @@ namespace ConsoleApp1
                 Inertions[numberLayer - 1][neuron.NumberOfLayer][i] = inertia;
                 neuron.Weights[i] = predictedWeight - (inertia + regulator);
             }
-
-            return delta;
-        }
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            int numberLayer = neuron.NumberLayer;
-
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                double inertia = Inertions[numberLayer - 1][neuron.NumberOfLayer][i];
-                double predictedWeight = currentWeight - inertia * Koef;
-                //inertia = inertia * Koef + delta * learningRate * previousOutputs[i];
-                inertia = inertia * Koef + delta * learningRate * (output - Koef * inertia);
-                Inertions[numberLayer - 1][neuron.NumberOfLayer][i] = inertia;
-                neuron.Weights[i] = predictedWeight - (inertia + regulator);
-            }
-
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];// - (Inertions[neuron.NumberLayer - 1][neuron.NumberOfLayer][j] * Koef); 
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
         }
     }
 
@@ -287,13 +169,13 @@ namespace ConsoleApp1
             }
         }
 
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             int numberLayer = neuron.NumberLayer;
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 double g = G[numberLayer - 1][neuron.NumberOfLayer][i];
@@ -301,48 +183,6 @@ namespace ConsoleApp1
                 G[numberLayer - 1][neuron.NumberOfLayer][i] = g;
                 neuron.Weights[i] = currentWeight - (((delta * output * learningRate) / (Math.Sqrt(g) + E)) + regulator);
             }
-            return delta;
-        }
-
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            int numberLayer = neuron.NumberLayer;
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                double g = G[numberLayer - 1][neuron.NumberOfLayer][i];
-                g = Alpha * g + (1 - Alpha) * Math.Pow(delta * output, 2);
-                G[numberLayer - 1][neuron.NumberOfLayer][i] = g;
-                neuron.Weights[i] = currentWeight - (((delta * output * learningRate) / (Math.Sqrt(g) + E)) + regulator);
-            }
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
-        }
-
-        public override double SigmoidDX(double value)
-        {
-            double sigmVal = Sigmoid(value);
-            return sigmVal * (1 - sigmVal);
-        }
-
-        public override double Sigmoid(double value)
-        {
-            return 1 / (1 + Math.Exp(-value));
         }
     }
 
@@ -380,13 +220,13 @@ namespace ConsoleApp1
             }
         }
 
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             int numberLayer = neuron.NumberLayer;
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 double g = G[numberLayer - 1][neuron.NumberOfLayer][i];
@@ -395,49 +235,6 @@ namespace ConsoleApp1
                 neuron.Weights[i] = currentWeight - ((weightDelta * learningRate / (Math.Sqrt(g) + E)) + regulator);
                 G[numberLayer - 1][neuron.NumberOfLayer][i] = g;
             }
-            return delta;
-        }
-
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            int numberLayer = neuron.NumberLayer;
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                double g = G[numberLayer - 1][neuron.NumberOfLayer][i];
-                double weightDelta = delta * output;
-                g = g + Math.Pow(weightDelta, 2);
-                neuron.Weights[i] = currentWeight - ((weightDelta * learningRate / (Math.Sqrt(g) + E)) + regulator);
-                G[numberLayer - 1][neuron.NumberOfLayer][i] = g;
-            }
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
-        }
-
-        public override double SigmoidDX(double value)
-        {
-            double sigmVal = Sigmoid(value);
-            return sigmVal * (1 - sigmVal);
-        }
-
-        public override double Sigmoid(double value)
-        {
-            return 1 / (1 + Math.Exp(-value));
         }
     }
     public class Adam : IOptimizer
@@ -483,13 +280,13 @@ namespace ConsoleApp1
             }
         }
 
-        public override double BackPropagation(Neuron neuron, List<double> previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
+        public override void BackPropagation(Neuron neuron, List<double> outputs, double learningRate, int epoch, DelegateforWeights dw)
         {
-            double delta = error * SigmoidDX(neuron.Output);
+            double delta = neuron.Delta;
             int numberLayer = neuron.NumberLayer;
             for (int i = 0; i < neuron.WeightsCount; i++)
             {
-                double output = previousOutputs[i];
+                double output = outputs[i];
                 double currentWeight = neuron.Weights[i];
                 double regulator = dw(currentWeight);
                 double v = V[numberLayer - 1][neuron.NumberOfLayer][i];
@@ -502,53 +299,6 @@ namespace ConsoleApp1
                 V[numberLayer - 1][neuron.NumberOfLayer][i] = v;
                 M[numberLayer - 1][neuron.NumberOfLayer][i] = m;
             }
-            return delta;
-        }
-
-        public override double BackPropagation(Neuron neuron, double[] previousOutputs, double error, double learningRate, int epoch, DelegateforWeights dw)
-        {
-            double delta = error * SigmoidDX(neuron.Output);
-            int numberLayer = neuron.NumberLayer;
-            for (int i = 0; i < neuron.WeightsCount; i++)
-            {
-                double output = previousOutputs[i];
-                double currentWeight = neuron.Weights[i];
-                double regulator = dw(currentWeight);
-                double v = V[numberLayer - 1][neuron.NumberOfLayer][i];
-                double m = M[numberLayer - 1][neuron.NumberOfLayer][i];
-                m = (Beta1 * m) + (1 - Beta1) * (delta * output);
-                v = (Beta2 * v) + (1 - Beta2) * Math.Pow(delta * output, 2);
-                double m_corr = m / (1 - Math.Pow(Beta1, epoch));
-                double v_corr = v / (1 - Math.Pow(Beta2, epoch));
-                neuron.Weights[i] = currentWeight - ((learningRate * m_corr) / (Math.Sqrt(v_corr) + E) + regulator);
-                V[numberLayer - 1][neuron.NumberOfLayer][i] = v;
-                M[numberLayer - 1][neuron.NumberOfLayer][i] = m;
-            }
-            return delta;
-        }
-
-        public override double GetFromAllDelta(Layer forwardLayer, int j)
-        {
-            double deltaSum = 0;
-            for (int k = 0; k < forwardLayer.Count; k++)
-            {
-                Neuron neuron = forwardLayer.Neurons[k];
-                double delta = neuron.Delta;
-                double weights = neuron.Weights[j];
-                deltaSum += delta * weights;
-            }
-            return deltaSum;
-        }
-
-        public override double SigmoidDX(double value)
-        {
-            double sigmVal = Sigmoid(value);
-            return sigmVal * (1 - sigmVal);
-        }
-
-        public override double Sigmoid(double value)
-        {
-            return 1 / (1 + Math.Exp(-value));
         }
     }
 }
