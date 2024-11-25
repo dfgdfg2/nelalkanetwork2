@@ -1,0 +1,17 @@
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralStructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralStructure.csproj.CoreCompileInputs.cache
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralStructure.sourcelink.json
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.exe
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.dll.config
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.deps.json
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.runtimeconfig.json
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.dll
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Memory.pdb
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralStructure.csproj.AssemblyReference.cache
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralSt.5ABBC6CC.Up2Date
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\Memory.dll
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\refint\Memory.dll
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\Memory.pdb
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\NeuralStructure.genruntimeconfig.cache
+C:\Users\zdmit\source\repos\MyNeralNetwork\Memory\obj\Debug\net8.0\ref\Memory.dll
